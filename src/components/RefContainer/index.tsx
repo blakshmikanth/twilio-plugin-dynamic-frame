@@ -1,13 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import { Actions } from "@twilio/flex-ui";
+import * as styles from "./constants";
 
-const hiddenContainer = "display: none; width: 100%; height: 100%;";
-const showContainer = "width: 100%; height: 100%;";
-const CommonClassName = "tw-frame";
-const divStyle = {
-  width: "100%",
-  height: "100%",
-};
+// const hiddenContainer = "display: none; width: 100%; height: 100%;";
+// const showContainer = "width: 100%; height: 100%;";
+// const CommonClassName = "tw-frame";
+// const divStyle = {
+//   width: "100%",
+//   height: "100%",
+// };
 
 const RefContainer = () => {
   const containerElement = useRef<HTMLDivElement>(null);
@@ -56,10 +57,10 @@ const RefContainer = () => {
    * Hide all iFrames in the container
    */
   const hideAllFrames = () => {
-    const frames = getIFrames(CommonClassName); //containerElement.current?.getElementsByClassName("tw-frame");
+    const frames = getIFrames(styles.common); //containerElement.current?.getElementsByClassName("tw-frame");
     [].forEach.call(frames, (frame: any) => {
       console.log(frame);
-      frame.setAttribute("style", hiddenContainer);
+      frame.setAttribute("style", styles.hide);
     });
   };
 
@@ -71,8 +72,8 @@ const RefContainer = () => {
   const createFrame = (payload: any) => {
     const element = document.createElement("iframe");
     element.src = payload.task.attributes.url;
-    element.className = `${payload.task.sid} ${CommonClassName}`;
-    element.setAttribute("style", showContainer);
+    element.className = `${payload.task.sid} ${styles.common}`;
+    element.setAttribute("style", styles.show);
     containerElement.current?.appendChild(element);
   };
 
@@ -90,12 +91,12 @@ const RefContainer = () => {
    * @param frameCollection collection of frame elements. Should be only one
    */
   const showFrame = (frameCollection: any) => {
-    frameCollection[0].setAttribute("style", showContainer);
+    frameCollection[0].setAttribute("style", styles.show);
   };
 
   return (
-    <div style={divStyle}>
-      <div ref={containerElement} style={divStyle}></div>
+    <div style={styles.fullSize}>
+      <div ref={containerElement} style={styles.fullSize}></div>
     </div>
   );
 };
