@@ -2,71 +2,23 @@ import React, { useEffect, useRef } from "react";
 import { Actions } from "@twilio/flex-ui";
 
 const hiddenContainer = "display: none; width: 100%; height: 100%;";
-
 const showContainer = "width: 100%; height: 100%;";
+const CommonClassName = "tw-frame";
+const divStyle = {
+  width: "100%",
+  height: "100%",
+};
 
 const RefContainer = () => {
   const containerElement = useRef<HTMLDivElement>(null);
-
-  // console.log("ContainerElement", containerElement.current);
 
   useEffect(() => {
     console.log("Rendering container element");
     if (!containerElement.current) return;
 
-    Actions.addListener("afterAcceptTask", (payload, cancelActionInvocation) => {
-      console.log("afterAcceptTask", payload, cancelActionInvocation);
-
-      if (payload.task === null) return;
-
-      hideAllFrames();
-      const frameCollection = containerElement.current?.getElementsByClassName(payload.task.sid);
-      if (frameCollection === undefined || frameCollection.length === 0) createFrame(payload);
-      else showFrame(frameCollection);
-    });
-
-    Actions.addListener("beforeSelectTask", (payload, cancelActionInvocation) => {
-      console.log("beforeSelectTask", payload);
-
-      if (payload.task === null) return;
-
-      hideAllFrames();
-
-      const frameCollection = containerElement.current?.getElementsByClassName(payload.task.sid);
-      if (frameCollection === undefined || frameCollection.length === 0) createFrame(payload);
-      else showFrame(frameCollection);
-
-      // // hide all frames
-      // const frames = containerElement.current?.getElementsByClassName("tw-frame");
-      // [].forEach.call(frames, (frame: any) => {
-      //   console.log(frame);
-      //   frame.setAttribute("style", hiddenContainer);
-      // });
-
-      // // Check whether the child element exists
-      // const childElement = containerElement.current?.getElementsByClassName(payload.task.sid);
-      // console.log(childElement);
-      // if (childElement === undefined || childElement.length === 0) {
-      //   const element = document.createElement("iframe");
-      //   element.src = payload.task.attributes.url;
-      //   element.className = `${payload.task.sid} tw-frame`;
-      //   element.setAttribute("style", showContainer);
-      //   containerElement.current?.appendChild(element);
-      // } else {
-      //   // child element exists. Show the element
-      //   childElement[0].setAttribute("style", showContainer);
-      // }
-    });
-
-    Actions.addListener("afterCompleteTask", (payload, cancelActionInvocation) => {
-      console.log("afterCompleteTask", payload);
-      // get the iframe element and remove it
-      const childElement = containerElement.current?.getElementsByClassName(payload.task.sid);
-      console.log(childElement);
-      if (childElement === undefined || childElement.length === 0) return;
-      // element found. Remove it from the collection
-      containerElement.current?.removeChild(childElement[0]);
-    });
+    Actions.addListener("afterAcceptTask", handleTaskEvent);
+    Actions.addListener("beforeSelectTask", handleTaskEvent);
+    Actions.addListener("afterCompleteTask", handleCompleteTaskEvent);
 
     return () => {
       Actions.removeListener("beforeSelectTask", (payload) => {});
@@ -75,10 +27,36 @@ const RefContainer = () => {
   }, []);
 
   /**
+   * To handle Flex events (AcceptTask and SelectTask)
+   * @param payload Payload from Flex Event
+   * @returns none
+   */
+  const handleTaskEvent = (payload: any) => {
+    // SelectTask fires after agent completes the task with empty payload. Ignore this event
+    if (payload.task === null) return;
+
+    // hide all frames
+    hideAllFrames();
+
+    // create a new frame if it doesn't exist and display it to the user
+    const frameCollection = getIFrames(payload.task.sid);
+    if (frameCollection === undefined || frameCollection.length === 0) createFrame(payload);
+    else showFrame(frameCollection);
+  };
+
+  const handleCompleteTaskEvent = (payload: any) => {
+    // get the iframe element and remove it
+    const frameCollection = getIFrames(payload.task.sid);
+    if (frameCollection === undefined || frameCollection.length === 0) return;
+    // element found. Remove it from the collection
+    containerElement.current?.removeChild(frameCollection[0]);
+  };
+
+  /**
    * Hide all iFrames in the container
    */
   const hideAllFrames = () => {
-    const frames = containerElement.current?.getElementsByClassName("tw-frame");
+    const frames = getIFrames(CommonClassName); //containerElement.current?.getElementsByClassName("tw-frame");
     [].forEach.call(frames, (frame: any) => {
       console.log(frame);
       frame.setAttribute("style", hiddenContainer);
@@ -93,18 +71,18 @@ const RefContainer = () => {
   const createFrame = (payload: any) => {
     const element = document.createElement("iframe");
     element.src = payload.task.attributes.url;
-    element.className = `${payload.task.sid} tw-frame`;
+    element.className = `${payload.task.sid} ${CommonClassName}`;
     element.setAttribute("style", showContainer);
     containerElement.current?.appendChild(element);
   };
 
   /**
    * To get iFrame collection
-   * @param payload
+   * @param className Class name of the iFrame
    * @returns iFrame Element collection
    */
-  const getIFrames = (payload: any) => {
-    return containerElement.current?.getElementsByClassName(payload.task.sid);
+  const getIFrames = (className: any) => {
+    return containerElement.current?.getElementsByClassName(className);
   };
 
   /**
@@ -116,8 +94,8 @@ const RefContainer = () => {
   };
 
   return (
-    <div style={{ width: "100%", height: "100%" }}>
-      <div ref={containerElement} style={{ width: "100%", height: "100%" }}></div>
+    <div style={divStyle}>
+      <div ref={containerElement} style={divStyle}></div>
     </div>
   );
 };
